@@ -1,12 +1,14 @@
-from PyQt5.QtWidgets import QMainWindow, QLineEdit, QVBoxLayout, QWidget, QPushButton, QMessageBox, QListWidget
+from PyQt5.QtWidgets import QLineEdit, QVBoxLayout, QWidget, QPushButton, QMessageBox, QListWidget
 from logic import crear_producto_logica, modificar_producto_logica, buscar_producto_logica, buscar_productos_por_nombre_logica
 from worker import Worker
-
-class ManagerWindow(QMainWindow):
+from styles import get_common_styles
+from class_win import ClassWindow
+class ManagerWindow(ClassWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestión de Productos")
-        self.setFixedSize(400, 300)
+        self.set_window_size_absolute(800, 600)
+        self.setStyleSheet(get_common_styles())
 
         self.layout = QVBoxLayout()
         
