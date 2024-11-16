@@ -1,2 +1,4 @@
-mongodb-compass-1.44.6-win32-x64.exe
 __pycache__
+build
+dist
+main.spec
