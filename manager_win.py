@@ -1,7 +1,8 @@
 from PyQt5.QtWidgets import (
-    QLineEdit, QVBoxLayout, QWidget, QPushButton, QListWidget, QLabel, QHBoxLayout
+    QLineEdit, QVBoxLayout, QWidget, QPushButton, QListWidget, QLabel, QHBoxLayout, QTabWidget, QTabBar
 )
-from PyQt5.QtCore import QTimer
+from PyQt5.QtGui import QPixmap, QFont, QPainter, QFontMetrics, QPainterPath, QImage, QBrush
+from PyQt5.QtCore import Qt, QTimer, QRectF
 from logic import crear_producto_logica, modificar_producto_logica, buscar_producto_logica, buscar_productos_por_nombre_logica
 from worker_manager import WorkerManager
 from styles import get_common_styles
@@ -12,7 +13,7 @@ class ManagerWindow(ClassWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Gestión de Productos")
-        self.set_window_size_absolute(800, 600)
+        self.set_window_size_absolute(1280, 720)
         self.setStyleSheet(get_common_styles())
 
         self.manager = WorkerManager()
@@ -28,31 +29,40 @@ class ManagerWindow(ClassWindow):
 
         # Layout principal
         self.layout = QVBoxLayout()
+        self.tab_widget = QTabWidget(self)
+        self.tab_widget.setTabPosition(QTabWidget.West)  # Coloca las pestañas a la izquierda con west btw, sino se ponen verticales....
 
+        # Crear la pestaña de gestión de productos
+        self.producto_tab = QWidget()
+        self.tab_widget.addTab(self.producto_tab, "Gestión de Productos")
+
+        self.home_tab = self.create_home_tab()
+        self.tab_widget.addTab(self.home_tab, "Inicio")
+
+        self.producto_layout = QVBoxLayout(self.producto_tab)
+
+        
         # Input de código de barras
         self.codigo_barras_input = QLineEdit(self)
         self.codigo_barras_input.setPlaceholderText('Código de Barras')
-        self.codigo_barras_input.setStyleSheet("padding: 10px;")
         self.codigo_barras_input.textChanged.connect(self.iniciar_timer_codigo)
 
         # Input de nombre
         self.nombre_input = QLineEdit(self)
         self.nombre_input.setPlaceholderText('Nombre del Producto')
-        self.nombre_input.setStyleSheet("padding: 10px;")
         self.nombre_input.textChanged.connect(self.iniciar_timer_nombre)
 
         # Input de cantidad
         self.cantidad_input = QLineEdit(self)
         self.cantidad_input.setPlaceholderText('Cantidad')
-        self.cantidad_input.setStyleSheet("padding: 10px;")
 
         # Botones
         self.agregar_button = QPushButton('Agregar Producto', self)
-        self.agregar_button.setStyleSheet("padding: 10px; background-color: #4CAF50; color: white;")
+        self.agregar_button.setObjectName('agregar_button')
         self.agregar_button.clicked.connect(self.agregar_producto)
 
         self.modificar_button = QPushButton('Modificar Producto', self)
-        self.modificar_button.setStyleSheet("padding: 10px; background-color: #2196F3; color: white;")
+        self.modificar_button.setObjectName('modificar_button')
         self.modificar_button.clicked.connect(self.modificar_producto)
 
         # Listas para mostrar resultados
@@ -64,22 +74,97 @@ class ManagerWindow(ClassWindow):
         self.resultados_nombre_label.setStyleSheet("font-weight: bold;")
         self.resultados_nombre_list = QListWidget(self)
 
-        # Agregar elementos al layout
-        self.layout.addWidget(self.codigo_barras_input)
-        self.layout.addWidget(self.nombre_input)
-        self.layout.addWidget(self.cantidad_input)
-        self.layout.addWidget(self.agregar_button)
-        self.layout.addWidget(self.modificar_button)
-        self.layout.addWidget(self.resultados_codigo_label)
-        self.layout.addWidget(self.resultados_codigo_list)
-        self.layout.addWidget(self.resultados_nombre_label)
-        self.layout.addWidget(self.resultados_nombre_list)
+        self.producto_list = QListWidget(self)  # Lista para mostrar productos
+        self.producto_layout.addWidget(self.codigo_barras_input)
+        self.producto_layout.addWidget(self.nombre_input)
+        self.producto_layout.addWidget(self.cantidad_input)
+        self.producto_layout.addWidget(self.agregar_button)
+        self.producto_layout.addWidget(self.modificar_button)
 
-        # Configurar el contenedor
+        
+        # Agregar el tab widget al layout principal
+        self.layout = QHBoxLayout() 
+        self.layout.addWidget(self.tab_widget) 
+        self.setCentralWidget(QWidget())
+        self.centralWidget().setLayout(self.layout)  # Configura el layout del widget central!!
+
+        # Agregar elementos al layout de resultados
+        self.layout_resultados = QVBoxLayout()
+        self.layout_resultados.addWidget(self.resultados_codigo_label)
+        self.layout_resultados.addWidget(self.resultados_codigo_list)
+        self.layout_resultados.addWidget(self.resultados_nombre_label)
+        self.layout_resultados.addWidget(self.resultados_nombre_list)
+
+        self.layout.addLayout(self.layout_resultados)
+
+        # Configurar el contenedor final
         container = QWidget()
         container.setLayout(self.layout)
         self.setCentralWidget(container)
-        self.setStyleSheet("background-color: #f0f0f0;")
+
+    def create_home_tab(self):
+        """Crea la pestaña principal del dashboard."""
+        tab = QWidget()
+        layout = QVBoxLayout()
+
+        # Header de usuario
+        user_info_layout = QHBoxLayout()
+        avatar = QLabel()
+        avatar.setPixmap(self.create_circular_pixmap("profile_pic.jpg", 100))
+        user_info_layout.addWidget(avatar)
+
+        user_details = QVBoxLayout()
+        user_name = QLabel("Usuario: eliiin")
+        user_name.setFont(QFont("Arial", 16, QFont.Bold))
+
+        # para añadir widget se utiliza esto por ejemplo:
+        # user_details.addWidget(QLabel())
+        # example: user_level = QLabel("Nivel: mi opene")
+
+        user_details.addWidget(user_name)
+        
+        user_info_layout.addLayout(user_details)
+        user_info_layout.addStretch()
+
+        layout.addLayout(user_info_layout)
+
+        # Sección de configuraciones rápidas
+        quick_settings_layout = QVBoxLayout()
+        quick_settings_label = QLabel("Configuraciones Rápidas")
+        quick_settings_label.setFont(QFont("Arial", 14, QFont.Bold))
+        quick_settings_layout.addWidget(quick_settings_label)
+
+        light_mode_btn = QPushButton("Modo Claro")
+        dark_mode_btn = QPushButton("Modo Oscuro")
+        restart_btn = QPushButton("Reiniciar Explorador")
+        quick_settings_layout.addWidget(light_mode_btn)
+        quick_settings_layout.addWidget(dark_mode_btn)
+        quick_settings_layout.addWidget(restart_btn)
+
+        layout.addLayout(quick_settings_layout)
+        tab.setLayout(layout)
+
+        return tab
+        
+    def create_circular_pixmap(self, path, diameter):
+        """Crea un QPixmap circular!!!1!!!1!!"""
+        original_pixmap = QPixmap(path)
+        size = min(original_pixmap.width(), original_pixmap.height())
+        rect = QRectF(0, 0, size, size)
+
+        image = QImage(size, size, QImage.Format_ARGB32_Premultiplied)
+        image.fill(Qt.transparent)
+
+        painter = QPainter(image)
+        path = QPainterPath()
+        path.addEllipse(rect)
+        painter.setClipPath(path)
+        painter.drawPixmap(0, 0, original_pixmap)
+        painter.end()
+
+        pixmap = QPixmap.fromImage(image)
+        return pixmap.scaled(diameter, diameter, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+
 
     def iniciar_timer_codigo(self):
         """Reinicia el temporizador para buscar por código de barras."""

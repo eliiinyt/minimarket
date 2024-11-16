@@ -41,4 +41,52 @@ def get_common_styles():
         border-radius: 5px;
         font-size: 14px;
     }
-    """
+
+    QTabWidget::tab-bar {
+        alignment: left;
+    }
+
+    QTabBar::tab {
+        height: 100px; /* Aumenta el tamaño de las pestañas */
+        width: 50px;
+        border: 1px solid #ccc;
+        background: #fff;
+        margin: 2px;
+        padding: 5px;
+        text-align: left; /* Alinea el texto a la izquierda */
+    }
+
+    QTabBar::tab:selected {
+        background: #e0e0e0;
+    }
+
+    QTabBar::tab {
+        font-size: 12px;
+    }
+
+    QWidget {
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        background-color: #f7f7f7;
+    }
+
+    QLabel {
+        color: #333;
+    }
+
+    QLineEdit, QPushButton {
+        border: 1px solid #ccc;
+         border-radius: 5px;
+         padding: 8px;
+        font-size: 14px;
+    }
+
+     QPushButton {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    PushButton:hover {
+        background-color: #45a049;
+    }
+"""
