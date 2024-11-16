@@ -25,34 +25,34 @@ class LoginWindow(ClassWindow):
         # Campo de email
         self.email_input = QLineEdit(self)
         self.email_input.setPlaceholderText('Email')
-        self.email_input.setStyleSheet("padding: 10px; border-radius: 5px; border: 1px solid #ccc;")
 
         # Campo de contraseña
         self.password_input = QLineEdit(self)
         self.password_input.setPlaceholderText('Contraseña')
         self.password_input.setEchoMode(QLineEdit.Password)
-        self.password_input.setStyleSheet("padding: 10px; border-radius: 5px; border: 1px solid #ccc;")
+        self.password_input.returnPressed.connect(self.iniciar_sesion)  # Conectar Enter con iniciar_sesion!!!!!
+
 
         # Botón de inicio de sesión
         self.login_button = QPushButton('Iniciar Sesión', self)
-        self.login_button.setStyleSheet("padding: 10px; background-color: #4CAF50; color: white; border-radius: 5px;")
+        self.login_button.setProperty('class', 'button-login')
         self.login_button.clicked.connect(self.iniciar_sesion)
 
         # Botón de registro
         self.register_button = QPushButton('Registrar', self)
-        self.register_button.setStyleSheet("padding: 10px; background-color: #2196F3; color: white; border-radius: 5px;")
+        self.register_button.setProperty('class', 'button-register')
         self.register_button.clicked.connect(self.registrar_usuario)
-
-        # Etiqueta de mensaje
-        self.mensaje_label = QLabel(self)
-        self.mensaje_label.setAlignment(Qt.AlignCenter)
-        self.mensaje_label.setStyleSheet("color: red; margin-top: 10px;")
 
         # Barra de progreso
         self.progress_bar = QProgressBar(self)
         self.progress_bar.setRange(0, 0)  # Indeterminado
         self.progress_bar.setTextVisible(False)
         self.progress_bar.setVisible(False)
+
+        # Etiqueta de mensaje
+        self.mensaje_label = QLabel(self)
+        self.mensaje_label.setAlignment(Qt.AlignCenter)
+        self.mensaje_label.setStyleSheet("margin-top: 10px;")
 
         # Añadir widgets al layout
         self.layout.addWidget(self.titulo_label)
@@ -67,7 +67,9 @@ class LoginWindow(ClassWindow):
         container = QWidget()
         container.setLayout(self.layout)
         self.setCentralWidget(container)
-        self.setStyleSheet("background-color: #f5f5f5;")
+
+        # Estilo específico del layout
+        self.setStyleSheet(get_common_styles())
 
     def iniciar_sesion(self):
         """Inicia el proceso de inicio de sesión en segundo plano."""
@@ -103,7 +105,7 @@ class LoginWindow(ClassWindow):
             self.mostrar_mensaje(f"¡Bienvenido {rol}!", "green")
             self.ventana_principal(rol)
         else:
-            self.mostrar_mensaje("Email o contraseña incorrectos.", "red")
+           self.mostrar_mensaje("Email o contraseña incorrectos.", "red")
 
     def handle_login_error(self, error, op_type):
         """Maneja errores en el proceso de login."""

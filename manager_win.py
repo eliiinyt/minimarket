@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import (
-    QLineEdit, QVBoxLayout, QWidget, QPushButton, QListWidget, QLabel, QHBoxLayout, QTabWidget, QTabBar
+    QLineEdit, QVBoxLayout, QWidget, QPushButton, QListWidget, QLabel, QHBoxLayout, QTabWidget, QTabBar, QGraphicsBlurEffect
 )
 from PyQt5.QtGui import QPixmap, QFont, QPainter, QFontMetrics, QPainterPath, QImage, QBrush
 from PyQt5.QtCore import Qt, QTimer, QRectF
@@ -14,6 +14,8 @@ class ManagerWindow(ClassWindow):
         super().__init__()
         self.setWindowTitle("Gestión de Productos")
         self.set_window_size_absolute(1280, 720)
+        # self.setWindowFlags(Qt.FramelessWindowHint)
+
         self.setStyleSheet(get_common_styles())
 
         self.manager = WorkerManager()
@@ -101,6 +103,7 @@ class ManagerWindow(ClassWindow):
         container = QWidget()
         container.setLayout(self.layout)
         self.setCentralWidget(container)
+
 
     def create_home_tab(self):
         """Crea la pestaña principal del dashboard."""

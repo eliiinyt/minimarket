@@ -65,6 +65,9 @@ def get_common_styles():
     }
 
     QWidget {
+        border: 1px solid rgba(255, 255, 255, 80);
+        border-radius: 15px;
+        padding: 15px;
         font-family: Arial, sans-serif;
         font-size: 14px;
         background-color: #f7f7f7;
@@ -76,8 +79,8 @@ def get_common_styles():
 
     QLineEdit, QPushButton {
         border: 1px solid #ccc;
-         border-radius: 5px;
-         padding: 8px;
+        border-radius: 5px;
+        padding: 8px;
         font-size: 14px;
     }
 
@@ -85,8 +88,39 @@ def get_common_styles():
         background-color: #4CAF50;
         color: white;
     }
-
+    
     PushButton:hover {
         background-color: #45a049;
+    }
+    QPushButton[class='button-login'] {
+        padding: 15px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    QPushButton[class='button-login']:hover {
+        background-color: #45a049;
+    }
+    
+    QPushButton[class='button-register'] {
+        padding: 15px 20px;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        background-color: #2196F3;
+        color: white;
+    }
+    QPushButton[class='button-register']:hover {
+        background-color: #1976D2;
+    }
+    QLabel {
+        margin-top: 10px;
     }
 """

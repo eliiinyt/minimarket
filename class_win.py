@@ -1,9 +1,27 @@
 from PyQt5.QtWidgets import QMainWindow, QMessageBox, QWidget, QVBoxLayout
 from PyQt5.QtGui import QGuiApplication
+import qtmodern.windows
+
 class ClassWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, apply_modern_style=True): # Cambia True por False si quieres el tema default
+        """
+        Clase base para todas las ventanas.
+        :param apply_modern_style: Si es True, aplica el estilo moderno automáticamente.
+        """
         super().__init__()
-        self.setStyleSheet("background-color: #f0f0f0;")  # like y cambio el estilo
+        self.apply_modern_style = apply_modern_style
+        self.setStyleSheet("background-color: #f0f0f0;")  # Estilo básico por defecto
+        self.modern_window = None
+
+    def show(self):
+        """
+        Muestra la ventana con el estilo moderno, si corresponde.
+        """
+        if self.apply_modern_style:
+            self.modern_window = qtmodern.windows.ModernWindow(self)
+            self.modern_window.show()
+        else:
+            super().show()
 
     def show_message(self, title, message, msg_type="info"):
         """Popup para mostrar mensajes"""
@@ -15,11 +33,11 @@ class ClassWindow(QMainWindow):
             QMessageBox.critical(self, title, message)
 
     def limpiar_formulario(self):
-        """luego me encargo de esto no me funen"""
+        """Método para limpiar formularios en subclases."""
         pass
 
     def set_window_title(self, title):
-        """Esto se utiliza para pone el titulo de la ventana (por alguna razón me crasheó probando)"""
+        """Establece el título de la ventana."""
         self.setWindowTitle(title)
 
     def set_window_size_absolute(self, width_px, height_px):
@@ -31,4 +49,3 @@ class ClassWindow(QMainWindow):
         altoVentana = (screen_size.height() * height_px) / 1080
         
         self.setFixedSize(int(anchoVentana), int(altoVentana))
-        
