@@ -20,18 +20,18 @@ def registrar_transaccion(transaccion_num, productos):
         return False
     
 
-def crear_producto_logica(codigo_barras, nombre, cantidad):
+def crear_producto_logica(codigo_barras, nombre, cantidad, precio):
     """Crea un nuevo producto utilizando su código de barras."""
     try:
-        return crear_producto(codigo_barras, nombre, cantidad)
+        return crear_producto(codigo_barras, nombre, cantidad, precio)
     except Exception as e:
         print(f"Error al crear producto: {e}")
         return False
 
-def modificar_producto_logica(codigo_barras, nombre, cantidad):
+def modificar_producto_logica(codigo_barras, nombre, cantidad, precio):
     """Modifica un producto existente utilizando su código de barras."""
     try:
-        return modificar_producto(codigo_barras, nombre, cantidad)
+        return modificar_producto(codigo_barras, nombre, cantidad, precio)
     except Exception as e:
         print(f"Error al modificar producto: {e}")
         return False

@@ -9,7 +9,7 @@ class LoginWindow(ClassWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle('Inicio de Sesión')
-        self.set_window_size_absolute(800, 600)
+        self.set_window_size_absolute(900, 700)
         self.setStyleSheet(get_common_styles())
 
         self.manager = WorkerManager()  # Manejo de hilos con WorkerManager

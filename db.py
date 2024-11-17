@@ -41,7 +41,7 @@ def autenticar_usuario(email, password):
         return usuario
     return None
 
-def crear_producto(codigo_barras, nombre, cantidad):
+def crear_producto(codigo_barras, nombre, cantidad, precio):
     """Crea un nuevo producto en la colección."""
     db = obtener_conexion()
     if db is None:
@@ -50,12 +50,13 @@ def crear_producto(codigo_barras, nombre, cantidad):
     producto = {
         'codigo_barras': codigo_barras,
         'nombre': nombre,
-        'cantidad': cantidad
+        'cantidad': cantidad,
+        'precio': precio
     }
     db['productos'].insert_one(producto)  # Inserta el producto en la colección y que no vuelva a ocurrir
     return True
 
-def modificar_producto(codigo_barras, nombre, cantidad):
+def modificar_producto(codigo_barras, nombre, cantidad, precio):
     """Modifica un producto existente en la colección."""
     db = obtener_conexion()
     if db is None:
@@ -63,7 +64,7 @@ def modificar_producto(codigo_barras, nombre, cantidad):
 
     resultado = db['productos'].update_one(
         {'codigo_barras': codigo_barras}, 
-        {'$set': {'nombre': nombre, 'cantidad': cantidad}}
+        {'$set': {'nombre': nombre, 'cantidad': cantidad, 'precio': precio}}
     )
     return resultado.modified_count > 0  # devuelve True si se modificó algo
 
