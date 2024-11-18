@@ -1,4 +1,4 @@
-from worker import Worker
+from backend.worker import Worker
 
 class WorkerManager:
     def __init__(self):

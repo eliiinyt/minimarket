@@ -1,4 +1,4 @@
-from worker import Worker
+from backend.worker import Worker
 from PyQt5.QtWidgets import QMainWindow, QLineEdit, QVBoxLayout, QWidget, QPushButton, QTextEdit, QMessageBox
 from logic import buscar_producto, registrar_transaccion
 

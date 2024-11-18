@@ -1,4 +1,3 @@
-
 from db import crear_producto, modificar_producto, buscar_producto, buscar_productos_por_nombre
 from db import obtener_conexion
 
@@ -37,17 +36,26 @@ def modificar_producto_logica(codigo_barras, nombre, cantidad, precio):
         return False
 
 def buscar_producto_logica(codigo_barras):
-    """Busca un producto por su código de barras."""
     try:
-        return buscar_producto(codigo_barras)
+        producto = buscar_producto(codigo_barras)
+        if producto:
+            print(producto)
+            return [{"codigo_barras": producto["codigo_barras"], "nombre": producto["nombre"],
+                     "cantidad": producto["cantidad"], "precio": producto["precio"]}]
+        return []
     except Exception as e:
         print(f"Error al buscar producto: {e}")
-        return None
+        return []
+
 
 def buscar_productos_por_nombre_logica(nombre):
     """Busca productos por su nombre."""
     try:
-        return buscar_productos_por_nombre(nombre)
+        producto = buscar_productos_por_nombre(nombre)
+        if producto:
+            return [{"codigo_barras": producto["codigo_barras"], "nombre": producto["nombre"],
+                     "cantidad": producto["cantidad"], "precio": producto["precio"]}]
+        return []
     except Exception as e:
-        print(f"Error al buscar productos: {e}")
+        print(f"Error al buscar producto: {e}")
         return []

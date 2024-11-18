@@ -3,25 +3,13 @@ from PyQt5.QtGui import QGuiApplication
 import qtmodern.windows
 
 class ClassWindow(QMainWindow):
-    def __init__(self, apply_modern_style=True): # Cambia True por False si quieres el tema default
+    def __init__(self): 
         """
         Clase base para todas las ventanas.
         :param apply_modern_style: Si es True, aplica el estilo moderno automáticamente.
         """
         super().__init__()
-        self.apply_modern_style = apply_modern_style
-        self.setStyleSheet("background-color: #f0f0f0;")  # Estilo básico por defecto
-        self.modern_window = None
-
-    def show(self):
-        """
-        Muestra la ventana con el estilo moderno, si corresponde.
-        """
-        if self.apply_modern_style:
-            self.modern_window = qtmodern.windows.ModernWindow(self)
-            self.modern_window.show()
-        else:
-            super().show()
+        self.setStyleSheet("stylesheets/login-light.qss")  # Estilo básico por defecto
 
     def show_message(self, title, message, msg_type="info"):
         """Popup para mostrar mensajes"""

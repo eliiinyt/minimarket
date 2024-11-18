@@ -77,10 +77,14 @@ def buscar_producto(codigo_barras):
     return db['productos'].find_one({'codigo_barras': codigo_barras})
 
 def buscar_productos_por_nombre(nombre):
-    """Busca productos por su nombre (puede ser parcial)."""
     db = obtener_conexion()
     if db is None:
         return []
 
-    # regex mis huevos lkJHLKASHDKLASJHD
-    return list(db['productos'].find({'nombre': {'$regex': nombre, '$options': 'i'}}))  #
+    try:
+        resultados = list(db['productos'].find({'nombre': {'$regex': f".*{nombre}.*", '$options': 'i'}}))
+        print(f"Resultados encontrados para '{nombre}': {resultados}")  # Depuración
+        return resultados
+    except Exception as e:
+        print(f"Error al buscar por nombre: {e}")
+        return []
