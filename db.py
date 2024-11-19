@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 from pymongo.errors import ConnectionFailure
-from werkzeug.security import generate_password_hash, check_password_hash
+from bcrypt import hashpw, checkpw, gensalt
 
 def obtener_conexion():
     """Obtiene una conexión a la base de datos MongoDB."""
@@ -20,10 +20,10 @@ def crear_usuario(email, password, rol):
         return False   # indica que no se pudo conectar, así el usuario no se crea
 
     coleccion = db['usuarios']
-    hashed_password = generate_password_hash(password)  # Hash de la contraseña
+    hashed_password = hashpw(str.encode(password), gensalt())  # Hash de la contraseña
     usuario = {
         'email': email,
-        'password': hashed_password,
+        'password': hashed_password.decode(),
         'rol': rol
     }
     coleccion.insert_one(usuario)
@@ -37,7 +37,7 @@ def autenticar_usuario(email, password):
 
     coleccion = db['usuarios']
     usuario = coleccion.find_one({'email': email})
-    if usuario and check_password_hash(usuario['password'], password):
+    if usuario and checkpw(str.encode(password),  str.encode(usuario['password'])):
         return usuario
     return None
 
