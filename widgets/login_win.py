@@ -4,14 +4,15 @@ from backend.auth import iniciar_sesion, registrar_usuario
 from backend.worker_manager import WorkerManager
 from widgets.ui_functions import Theme, showMessage
 from ui.login_ui import LoginUI
+from PyQt5.QtCore import Qt
 
 class LoginWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-
+        self.setWindowFlags(Qt.Window | Qt.WindowCloseButtonHint | Qt.CustomizeWindowHint)
         self.setWindowTitle('Inicio de Sesión')
         self.setWindowIcon(QIcon('res/images/icon-128px.png'))
-        self.setGeometry(100, 100, 600, 400)
+        self.setFixedSize(400, 500)
         self.theme = {'dark': 'stylesheets/login-dark.qss',
                       'light': 'stylesheets/login-light.qss'}
         thm = Theme(self)
@@ -33,6 +34,9 @@ class LoginWindow(QMainWindow):
         if not email or not password:
             showMessage(self.ui.mensaje_label, "Por favor, rellena todos los campos.", "red")
             return
+        self.ui.progress_bar.setVisible(True)
+        self.ui.login_button.setEnabled(False)
+        self.ui.register_button.setEnabled(False)
 
         self.manager.ejecutar_worker(
             func=iniciar_sesion,
@@ -50,7 +54,7 @@ class LoginWindow(QMainWindow):
         self.ui.register_button.setEnabled(True)
 
         if rol:
-            showMessage(self.ui.mensaje_label, f"¡Bienvenido {rol}!", "green")
+            #showMessage(self.ui.mensaje_label, f"¡Bienvenido {rol}!", "green")
             self.ventana_principal(rol)
         else:
            showMessage(self.ui.mensaje_label,"Email o contraseña incorrectos.", "red")

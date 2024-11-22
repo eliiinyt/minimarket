@@ -35,27 +35,40 @@ def modificar_producto_logica(codigo_barras, nombre, cantidad, precio):
         print(f"Error al modificar producto: {e}")
         return False
 
-def buscar_producto_logica(codigo_barras):
-    try:
-        producto = buscar_producto(codigo_barras)
-        if producto:
-            print(producto)
-            return [{"codigo_barras": producto["codigo_barras"], "nombre": producto["nombre"],
-                     "cantidad": producto["cantidad"], "precio": producto["precio"]}]
-        return []
-    except Exception as e:
-        print(f"Error al buscar producto: {e}")
-        return []
-
-
 def buscar_productos_por_nombre_logica(nombre):
-    """Busca productos por su nombre."""
+    """Busca productos por nombre utilizando MongoDB."""
     try:
-        producto = buscar_productos_por_nombre(nombre)
-        if producto:
-            return [{"codigo_barras": producto["codigo_barras"], "nombre": producto["nombre"],
-                     "cantidad": producto["cantidad"], "precio": producto["precio"]}]
+        productos = buscar_productos_por_nombre(nombre)  # Debería devolver una lista de documentos
+        if productos:
+            return [
+                {
+                    "codigo_barras": producto.get("codigo_barras", "N/A"),
+                    "nombre": producto.get("nombre", "N/A"),
+                    "cantidad": producto.get("cantidad", 0),
+                    "precio": producto.get("precio", 0.0)
+                }
+                for producto in productos
+            ]
         return []
     except Exception as e:
-        print(f"Error al buscar producto: {e}")
+        print(f"Error al buscar productos por nombre: {e}")
+        return []
+
+
+def buscar_producto_logica(codigo_barras):
+    """Busca un producto por su código de barras utilizando MongoDB."""
+    try:
+        producto = buscar_producto(codigo_barras)  # Debería devolver un documento único
+        if producto:
+            return [
+                {
+                    "codigo_barras": producto.get("codigo_barras", "N/A"),
+                    "nombre": producto.get("nombre", "N/A"),
+                    "cantidad": producto.get("cantidad", 0),
+                    "precio": producto.get("precio", 0.0)
+                }
+            ]
+        return []
+    except Exception as e:
+        print(f"Error al buscar producto por código de barras: {e}")
         return []

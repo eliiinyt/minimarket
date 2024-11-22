@@ -1,68 +1,63 @@
-QWidget#logIn{
-	background-color: rgb(50,50,50);
+/* Fondo general de la ventana */
+QWidget {
+   /* background-color: #fdf7f0;*/ 
+    font-family: "Arial";
+    font-size: 14px;
 }
 
-QFrame#logo{
-	background-image: url(res/images/trolley.jpg);
-	background-repeat: no-repeat;
-	background-position: center;
-}
-QFrame#frameSignIn{
-	background-color: rgb(200, 200, 200);
-}
-
-
-QPushButton#buttonLogo{
-	background-color: rgba(255, 255, 255,200);
-	background-image:url(res/images/icon-round-80px.png);
-	border-radius:40px;
-}
-QPushButton#buttonLogo:hover{
-	background-color: rgba(0, 0, 0,200);
-}
-QPushButton#buttonLogo:pressed{
-	background-color: rgba(100, 100, 100,200);
+/* Estilo del título principal */
+QLabel#TituloLabel {
+    color: #f07a29; /* Color del título */
+    font-size: 28px;
+    font-weight: bold;
+    qproperty-alignment: AlignCenter; /* Centrado */
+    text-align: center; /* Asegura el centrado visual */
 }
 
-
-
-QPushButton#buttonSignIn{
-    color: rgb(51, 51, 51);
-    font: 16px  "Centular";
-    background-color: rgb(116, 181, 224);
-}
-QPushButton#buttonSignIn:hover{
-    background-color: rgb(59, 59, 90);
-    color: rgb(255, 255, 255);
-}
-QPushButton#buttonSignIn:pressed{
-    background-color: rgba(59, 59, 90,150);
-    color: rgb(255, 255, 255);
+/* Color de texto general */
+QLabel {
+    color: #333333;
 }
 
-
-QLabel#name{
-	color: rgb(255, 255, 255);
-	font: 28pt "Rockwell Condensed";
+/* Campos de entrada (correo y contraseña) */
+QLineEdit {
+    background-color: #fff5e0; /* Fondo claro */
+    border: 1px solid #f0a360;
+    border-radius: 8px;
+    padding: 6px;
+    height: 30px; /* Altura fija */
 }
 
-QLabel#labelSignIn{
-	color: rgb(50, 50, 50);
-	font: 25px  "Centular";
-}
-QLabel{
-	color: rgb(50, 50, 50);
-	font: 15px  "Centular";
-}
-QLineEdit{
-	border:none;
-	border-radius:3px;
+/* Botones de acción general (Iniciar sesión, Registrar) */
+QPushButton {
+    background-color: #f0a360; /* Naranja */
+    color: #ffffff; /* Texto blanco */
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    padding: 6px;
+    height: 36px; /* Altura fija */
+    width: 200px; /* Ancho fijo */
 }
 
+QPushButton:hover {
+    background-color: #ffa573; /* Naranja más claro */
+}
 
-    
-QMessageBox{
-	background-color: rgb(250, 250, 250);
-	color: rgb(55, 55, 55);
-    font: 15px  "Centular";
+QPushButton:pressed {
+    background-color: #e17b42; /* Naranja oscuro */
+}
+
+/* Botón "¿Olvidaste tu contraseña?" */
+QPushButton#forgot_password_button {
+    background-color: transparent; /* Fondo transparente */
+    color: #f07a29; /* Naranja del texto */
+    font-size: 12px;
+    text-decoration: none; /* Sin subrayado */
+    border: none;
+    margin-top: 10px;
+}
+
+QPushButton#forgot_password_button:hover {
+    color: #f07a29; /* No cambia en hover */
 }

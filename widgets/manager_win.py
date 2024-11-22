@@ -14,18 +14,20 @@ class ManagerWindow(QWidget):
         self.setWindowTitle("Gestión de Productos")
         self.resize(1440, 900)
         self.theme = {'dark': 'stylesheets/dark.qss',
-                      'light': 'stylesheets/light.qss'}
+                      'light': 'stylesheets/test_style.qss'}
         thm = Theme(self)
         json_theme = thm.getTheme()
         thm.applyTheme(json_theme)
+        
 
         # Instancias de la interfaz y el manejador de tareas
         self.ui = ManagerUI(self)
         self.manager = WorkerManager()
 
-        # Configurar el diseño principal
+        # diseño principal
         self.layout = QVBoxLayout()
         self.tab_widget = QTabWidget()
+        self.tab_widget.currentChanged.connect(self.on_tab_changed)
         self.ui.setup_tabs(self.tab_widget)
 
         self.layout.addWidget(self.tab_widget)
@@ -37,80 +39,67 @@ class ManagerWindow(QWidget):
         # Temporizadores para búsquedas
         self.timer_codigo = QTimer(self)
         self.timer_codigo.setInterval(500)
-        self.timer_codigo.timeout.connect(self.buscar_por_codigo)
-      
+        self.timer_codigo.timeout.connect(lambda: self.buscar_con_temporizador(self.ui.codigo_barras_input, self.timer_codigo, self.ui.resultados_table, "codigo_barras"))
+
         self.timer_nombre = QTimer(self)
         self.timer_nombre.setInterval(500)
-        self.timer_nombre.timeout.connect(self.buscar_por_nombre)
+        self.timer_nombre.timeout.connect(lambda: self.buscar_con_temporizador(self.ui.nombre_input, self.timer_nombre, self.ui.resultados_table, "nombre"))
 
+
+    
+        # Conectar campos de entrada para iniciar los temporizadores
         self.ui.codigo_barras_input.textChanged.connect(self.timer_codigo.start)
         self.ui.nombre_input.textChanged.connect(self.timer_nombre.start)
 
+        self.ui.dark_mode_btn.clicked.connect(lambda: self.changeTheme())
 
-    def buscar_por_codigo(self):
-        """
-        Busca un producto por código de barras usando un temporizador y actualiza la tabla.
-        """
-        self.timer_codigo.stop()
-        codigo = self.ui.codigo_barras_input.text().strip()
-        if codigo:
-            self.manager.ejecutar_worker(
-                func=buscar_producto_logica,
-                op_type="buscar_codigo",
-                resultado_callback=self.mostrar_resultado_en_tabla,
-                error_callback=self.ui.mostrar_error,
-                codigo_barras=codigo,
-            )
 
-    def buscar_por_nombre(self):
-        """
-        Busca productos por nombre usando un temporizador y actualiza la tabla.
-        """
-        self.timer_nombre.stop()
-        nombre = self.ui.nombre_input.text().strip()
-        if nombre:
-            self.manager.ejecutar_worker(
-                func=buscar_productos_por_nombre_logica,
-                op_type="buscar_nombre",
-                resultado_callback=self.mostrar_resultados_en_tabla,
-                error_callback=self.ui.mostrar_error,
-                nombre=nombre,
-            )
-    def mostrar_resultado_en_tabla(self, resultado):
-        """
-        Muestra un único producto en la tabla de resultados. Maneja el caso de listas.
-        """
-        self.ui.resultados_table.setRowCount(0)
+    def changeTheme(self):
+            thm = Theme(self)
+            if thm.getTheme() == 'dark':
+                theme = 'light'
+            else:
+                theme = 'dark'
+            thm.applyTheme(theme)
 
-        # Si el resultado es una lista, toma el primer elemento
-        if isinstance(resultado, list) and len(resultado) > 0:
-            resultado = resultado[0]
-
-        if isinstance(resultado, dict):
-            self.ui.resultados_table.setRowCount(1)
-            self.ui.resultados_table.setItem(0, 0, QTableWidgetItem(resultado.get("codigo_barras", "N/A")))
-            self.ui.resultados_table.setItem(0, 1, QTableWidgetItem(resultado.get("nombre", "N/A")))
-            self.ui.resultados_table.setItem(0, 2, QTableWidgetItem(str(resultado.get("cantidad", "N/A"))))
-            self.ui.resultados_table.setItem(0, 3, QTableWidgetItem(f"${resultado.get('precio', 0.00):.2f}"))
-        else:
-            self.ui.resultados_table.setRowCount(1)
-            self.ui.resultados_table.setItem(0, 0, QTableWidgetItem("No se encontró el producto"))
-
-    def mostrar_resultados_en_tabla(self, resultados):
+    def buscar_producto(self, criterio, valor, tabla_destino):
         """
-        Muestra múltiples productos en la tabla de resultados.
+        Busca productos según un criterio (nombre o código de barras) y actualiza la tabla.
+
+        Args:
+            criterio (str): El criterio de búsqueda ('nombre' o 'codigo_barras').
+            valor (str): El valor a buscar.
+            tabla_destino (QTableWidget): La tabla donde se mostrarán los resultados.
         """
-        self.ui.resultados_table.setRowCount(0)
-        if resultados:
-            self.ui.resultados_table.setRowCount(len(resultados))
+        self.manager.ejecutar_worker(
+            func=buscar_productos_por_nombre_logica if criterio == "nombre" else buscar_producto_logica,
+            op_type=f"buscar_{criterio}",
+            resultado_callback=lambda resultados: self.mostrar_resultados_en_tabla(resultados, tabla_destino),
+            error_callback=self.ui.mostrar_error,
+            **{criterio: valor},  # Pasa el argumento dinámicamente
+        )
+
+    def mostrar_resultados_en_tabla(self, resultados, tabla_destino):
+        """
+        Muestra múltiples productos en una tabla específica.
+
+        Args:
+            resultados (list): Lista de diccionarios con información de los productos.
+            tabla_destino (QTableWidget): La tabla donde se mostrarán los resultados.
+        """
+        tabla_destino.setRowCount(0)  # Limpiar la tabla antes de agregar datos
+
+        if resultados: 
+            tabla_destino.setRowCount(len(resultados))
             for row, producto in enumerate(resultados):
-                self.ui.resultados_table.setItem(row, 0, QTableWidgetItem(producto["codigo_barras"]))
-                self.ui.resultados_table.setItem(row, 1, QTableWidgetItem(producto["nombre"]))
-                self.ui.resultados_table.setItem(row, 2, QTableWidgetItem(str(producto["cantidad"])))
-                self.ui.resultados_table.setItem(row, 3, QTableWidgetItem(f"${producto['precio']:.2f}"))
+                # Insertar datos del producto en las filas correspondientes
+                tabla_destino.setItem(row, 0, QTableWidgetItem(producto.get("codigo_barras", "N/A")))
+                tabla_destino.setItem(row, 1, QTableWidgetItem(producto.get("nombre", "N/A")))
+                tabla_destino.setItem(row, 2, QTableWidgetItem(str(producto.get("cantidad", "N/A"))))
+                tabla_destino.setItem(row, 3, QTableWidgetItem(f"${producto.get('precio', 0.00):.2f}"))
         else:
-            self.ui.resultados_table.setRowCount(1)
-            self.ui.resultados_table.setItem(0, 0, QTableWidgetItem("No se encontraron resultados"))
+            tabla_destino.setRowCount(1)
+            tabla_destino.setItem(0, 0, QTableWidgetItem("No se encontraron resultados"))
 
 
     def registrar_producto(self):
@@ -140,19 +129,91 @@ class ManagerWindow(QWidget):
             self.ui.mostrar_error("Error al registrar el producto.")
 
 
-def modificar_producto(self):
-        datos = self.validar_datos_producto()
-        if datos:
-            codigo_barras, nombre, cantidad, precio = datos
-            self.manager.ejecutar_worker(
-                func=modificar_producto_logica,
-                op_type='modificar_producto',
-                resultado_callback=self.mostrar_mensaje_exito,
-                error_callback=self.mostrar_error,
-                codigo_barras=codigo_barras,
-                nombre=nombre,
-                cantidad=cantidad,
-                precio=precio
+    def modificar_producto(self):
+            datos = self.validar_datos_producto()
+            if datos:
+                codigo_barras, nombre, cantidad, precio = datos
+                self.manager.ejecutar_worker(
+                    func=modificar_producto_logica,
+                    op_type='modificar_producto',
+                    resultado_callback=self.mostrar_mensaje_exito,
+                    error_callback=self.mostrar_error,
+                    codigo_barras=codigo_barras,
+                    nombre=nombre,
+                    cantidad=cantidad,
+                    precio=precio
+                )
+
+
+    def buscar_con_temporizador(self, input_field, timer, tabla_destino, criterio):
+        """
+        Realiza una búsqueda genérica después de un intervalo configurado.
+
+        Args:
+            input_field (QLineEdit): Campo de entrada para la búsqueda.
+            timer (QTimer): Temporizador asociado a la búsqueda.
+            tabla_destino (QTableWidget): Tabla donde se mostrarán los resultados.
+            criterio (str): Criterio de búsqueda ('codigo_barras' o 'nombre').
+        """
+        timer.stop()
+        valor = input_field.text().strip()
+        if valor:
+            self.buscar_producto(criterio=criterio, valor=valor, tabla_destino=tabla_destino)
+
+
+
+    def on_tab_changed(self, index):
+        """
+        Método que se ejecuta cuando se cambia de pestaña.
+        """
+        current_tab = self.tab_widget.widget(index)
+
+        if current_tab == self.cobro_tab:
+            self.setup_cobro_tab_logic()
+        else:
+            self.stop_all_timers()
+
+
+
+    def setup_cobro_tab_logic(self):
+        """
+        Configura la lógica específica para la pestaña de Cobro.
+        """
+        if not hasattr(self, "cobro_logic_initialized") or not self.cobro_logic_initialized:
+            self.cobro_logic_initialized = True
+
+            # Temporizadores
+            self.timer_cobro_codigo = QTimer(self)
+            self.timer_cobro_codigo.setInterval(500)
+            self.timer_cobro_codigo.timeout.connect(
+                lambda: self.buscar_con_temporizador(
+                    self.ui.codigo_barras_cobro_input,
+                    self.timer_cobro_codigo,
+                    self.ui.cobro_search_table,
+                    "codigo_barras",
+                )
             )
 
+            self.timer_cobro_nombre = QTimer(self)
+            self.timer_cobro_nombre.setInterval(500)
+            self.timer_cobro_nombre.timeout.connect(
+                lambda: self.buscar_con_temporizador(
+                    self.ui.nombre_cobro_input,
+                    self.timer_cobro_nombre,
+                    self.ui.cobro_search_table,
+                    "nombre",
+                )
+            )
 
+            # Conectar eventos
+            self.ui.codigo_barras_cobro_input.textChanged.connect(self.timer_cobro_codigo.start)
+            self.ui.nombre_cobro_input.textChanged.connect(self.timer_cobro_nombre.start)
+
+
+    def stop_all_timers(self):
+        """
+        Detiene todos los temporizadores activos para evitar conflictos.
+        """
+        for timer in [self.timer_cobro_codigo, self.timer_cobro_nombre]:
+            if timer and timer.isActive():
+                timer.stop()
