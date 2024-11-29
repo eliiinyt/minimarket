@@ -11,16 +11,23 @@ class Theme:
     def getTheme(self):
         with open('settings.json', 'r') as f:
             settings = json.load(f)
-            return settings['theme']
+            return settings.get('theme', 'light')  # Retorna 'light' por defecto si no se encuentra nada
 
     def applyTheme(self, theme_key):
         """
         @type theme_key: str
         """
-        settings = {'theme': theme_key}
-        with open('settings.json', 'w') as f:
-            json.dump(settings, f)
+        try:
+            with open('settings.json', 'r') as f:
+                settings = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError):
+            settings = {}
+        settings['theme'] = theme_key
 
+        with open('settings.json', 'w') as f:
+            json.dump(settings, f, indent=4)
+
+        # Aplicar el tema al widget
         self.widget.style().unpolish(self.widget)
         file = QFile(self.widget.theme[theme_key])
         if not file.open(QFile.ReadOnly | QFile.Text):
@@ -29,6 +36,7 @@ class Theme:
         self.widget.setStyleSheet(style.readAll())
         self.widget.style().polish(self.widget)
         self.widget.update()
+
 
 
 # shows message in the screne with a ok button

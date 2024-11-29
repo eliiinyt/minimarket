@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QToolButton, QLabel, QPushButton, QLineEdit, QListWidget, QWidget, QTabWidget, QTableWidget, QTableWidgetItem
-from PyQt5.QtGui import QFont, QPixmap, QImage, QPainterPath, QPainter, QIcon
+from PyQt5.QtGui import QFont, QPixmap, QImage, QPainterPath, QPainter, QIcon, QIntValidator
 from PyQt5.QtCore import Qt, QRectF, QSize
 
 class ManagerUI:
@@ -91,6 +91,7 @@ class ManagerUI:
         form_layout = QHBoxLayout()
 
         self.codigo_barras_cobro_input = QLineEdit()
+        self.codigo_barras_cobro_input.setValidator(QIntValidator())
         self.codigo_barras_cobro_input.setPlaceholderText("Código de Barras")
         form_layout.addWidget(self.codigo_barras_cobro_input)
 
@@ -186,6 +187,7 @@ class ManagerUI:
         titulo.setFont(QFont("Arial", 14, QFont.Bold))
 
         self.codigo_barras_input = QLineEdit()
+        self.codigo_barras_input.setValidator(QIntValidator())
         self.codigo_barras_input.setPlaceholderText("Código de Barras")
 
         self.nombre_input = QLineEdit()
@@ -238,6 +240,7 @@ class ManagerUI:
         self.cobro_tab = QWidget()
         self.setup_cobro_tab(self.cobro_tab)
         self.tab_widget.addTab(self.cobro_tab, "Cobro")
+
     
     def setup_configuration(self, tab):
         """
