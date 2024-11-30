@@ -2,7 +2,7 @@ from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QMainWindow
 from backend.auth import iniciar_sesion, registrar_usuario
 from backend.worker_manager import WorkerManager
-from widgets.ui_functions import Theme, showMessage
+from widgets.ui_functions import Theme, show_message
 from ui.login_ui import LoginUI
 from PyQt5.QtCore import Qt
 
@@ -32,7 +32,7 @@ class LoginWindow(QMainWindow):
         password = self.ui.password_input.text().strip()
 
         if not email or not password:
-            showMessage(self.ui.mensaje_label, "Por favor, rellena todos los campos.", "red")
+            show_message(self.ui.mensaje_label, "Por favor, rellena todos los campos.", "red")
             return
         self.ui.progress_bar.setVisible(True)
         self.ui.login_button.setEnabled(False)
@@ -54,26 +54,26 @@ class LoginWindow(QMainWindow):
         self.ui.register_button.setEnabled(True)
 
         if rol:
-            #showMessage(self.ui.mensaje_label, f"¡Bienvenido {rol}!", "green")
+            #show_message(self.ui.mensaje_label, f"¡Bienvenido {rol}!", "green")
             self.ventana_principal(rol)
         else:
-           showMessage(self.ui.mensaje_label,"Email o contraseña incorrectos.", "red")
+           show_message(self.ui.mensaje_label,"Email o contraseña incorrectos.", "red")
 
     def handle_login_error(self, error, op_type):
         """Maneja errores en el proceso de login."""
         self.ui.progress_bar.setVisible(False)
         self.ui.login_button.setEnabled(True)
         self.ui.register_button.setEnabled(True)
-        showMessage(self.ui.mensaje_label, f"Error: {error}", "red")
+        show_message(self.ui.mensaje_label, f"Error: {error}", "red")
 
     def registrar_usuario(self):
         email = self.ui.email_input.text().strip()
         password = self.ui.password_input.text().strip()
         try:
             registrar_usuario(email, password)
-            showMessage(self.ui.mensaje_label, "Usuario registrado exitosamente.", "green")
+            show_message(self.ui.mensaje_label, "Usuario registrado exitosamente.", "green")
         except Exception as e:
-            showMessage(self.ui.mensaje_label, f"Error al registrar: {e}", "red")
+            show_message(self.ui.mensaje_label, f"Error al registrar: {e}", "red")
 
     def ventana_principal(self, rol):
         """Abre la ventana principal según el rol del usuario."""

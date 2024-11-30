@@ -1,17 +1,21 @@
-from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem
+from PyQt5.QtWidgets import QMainWindow, QTableWidgetItem, QMessageBox
 from backend.worker_manager import WorkerManager
 from ui.manager_ui import ManagerUI
-import os
+import os 
+from datetime import datetime
+import uuid
+from widgets.popup import FacturaPopup
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.graphics.barcode.code128 import Code128
-from widgets.ui_functions import Theme, showMessage
+from widgets.ui_functions import Theme, show_message
 from functools import partial
 import json
 from PyQt5.QtWidgets import QVBoxLayout, QTabWidget, QWidget
 from PyQt5.QtCore import QTimer
 from logic import crear_producto_logica, modificar_producto_logica, buscar_producto_logica, buscar_productos_por_nombre_logica
+from db import crear_factura, obtener_facturas
 
 class ManagerWindow(QWidget):
     def __init__(self):
@@ -25,7 +29,7 @@ class ManagerWindow(QWidget):
         thm.applyTheme(json_theme)
         
 
-        # Instancias de la interfaz y el manejador de tareas
+        # Instancias de la interfaz y worker
         self.ui = ManagerUI(self)
         self.manager = WorkerManager()
 
@@ -39,13 +43,19 @@ class ManagerWindow(QWidget):
         self.setLayout(self.layout)
         self.ui.agregar_button.clicked.connect(self.registrar_producto)
         self.ui.modificar_button.clicked.connect(self.registrar_producto)
+        self.ui.agregar_a_cesta_button.clicked.connect(self.agregar_a_cesta)
+        self.ui.productos_table.cellDoubleClicked.connect(self.seleccionar_producto_desde_tabla)
+        self.ui.pagar_button.clicked.connect(self.mostrar_popup_factura)
+        self.cargar_historial()
+        self.ui.reload_button.clicked.connect(self.cargar_historial)
+
 
 
         # Temporizadr dde busqueda
         self.timer_busqueda = QTimer(self)
         self.timer_busqueda.setInterval(500)
         self.timer_busqueda.timeout.connect(self.realizar_busqueda)
-
+        
         # mapeo lal
         self.campos_busqueda = {
             self.ui.codigo_barras_input: {
@@ -60,12 +70,12 @@ class ManagerWindow(QWidget):
             },
             self.ui.nombre_cobro_input: {
                 "criterio": "nombre",
-                "tabla": self.ui.cobro_search_table,
+                "tabla": self.ui.productos_table,
                 "timer": self.timer_busqueda
             },
             self.ui.codigo_barras_cobro_input: {
                 "criterio": "codigo_barras",
-                "tabla": self.ui.cobro_search_table,
+                "tabla": self.ui.productos_table,
                 "timer": self.timer_busqueda
             }
         }
@@ -170,7 +180,7 @@ class ManagerWindow(QWidget):
                     func=modificar_producto_logica,
                     op_type='modificar_producto',
                     resultado_callback=self.mostrar_mensaje_exito,
-                    error_callback=self.mostrar_error,
+                    error_callback=lambda: show_message(self, "modificar_producto_logica", "error", "warning"),
                     codigo_barras=codigo_barras,
                     nombre=nombre,
                     cantidad=cantidad,
@@ -222,7 +232,7 @@ class ManagerWindow(QWidget):
                 lambda: self.buscar_con_temporizador(
                     self.ui.codigo_barras_cobro_input,
                     self.timer_cobro_codigo,
-                    self.ui.cobro_search_table,
+                    self.ui.productos_table,
                     "codigo_barras",
                 )
             )
@@ -233,7 +243,7 @@ class ManagerWindow(QWidget):
                 lambda: self.buscar_con_temporizador(
                     self.ui.nombre_cobro_input,
                     self.timer_cobro_nombre,
-                    self.ui.cobro_search_table,
+                    self.ui.productos_table,
                     "nombre",
                 )
             )
@@ -280,28 +290,90 @@ class ManagerWindow(QWidget):
         self.timer_busqueda.start()
 
 
+    def mostrar_popup_factura(self):
+            # Total de la cesta
+            total = self.calcular_total_cesta()
+
+            # Mostrar el popup
+            popup = FacturaPopup(total, self)
+            if popup.exec_():  # Si se confirma el diálogo
+                datos_cliente = popup.get_datos_factura()
+
+                # Validar dinero recibido, cambio y por ultimo generrar la factura
+                dinero_recibido = datos_cliente["dinero_recibido"]
+                if dinero_recibido < total:
+                    QMessageBox.warning(self, "Error", "El dinero recibido es insuficiente.")
+                    return
+                cambio = dinero_recibido - total
+
+                self.generar_factura(datos_cliente, total, cambio)
 
 
 
-    def generar_factura(self):
+    def generar_factura(self, datos_cliente, total, cambio):
+        """Genera una factura en PDF utilizando los datos del cliente y la cesta."""
+        productos = self.obtener_datos_cesta()
         settings = cargar_settings()
+        factura_id = str(uuid.uuid4()) # esto luego lo cambio a cocmo dijo Ruva
+
         datos_factura = {
+            "factura_id": factura_id,
+            "fecha": datetime.now().isoformat(),
             "direccion": settings.get("direccion", "Dirección no configurada"),
             "telefono": settings.get("telefono", "Teléfono no configurado"),
-            "cajero": "#2",
+            "cajero": "#2",  # esto luego tengo que implementarlo
             "gerente": settings.get("gerente", "Gerente no configurado"),
-            "productos": [
-                {"nombre": "dildo", "cantidad": 1, "precio": 9.20},
-                {"nombre": "A520M-k", "cantidad": 1, "precio": 19.20},
-                {"nombre": "Vaselina", "cantidad": 1, "precio": 15.00},
-            ],
-            "subtotal": 43.70,
-            "efectivo": 200.00,
-            "cambio": 156.60,
-            "codigo_barras": "123456789012"
+            "productos": productos,
+            "subtotal": total,
+            "efectivo": datos_cliente["dinero_recibido"],
+            "cambio": cambio,
+            "cliente": {
+                "nombre": datos_cliente.get("nombre", "Cliente Anónimo"),
+                "email": datos_cliente.get("email", ""),
+                "telefono": datos_cliente.get("telefono", "")
+            }
         }
-        nombre_archivo = "factura_supermercado.pdf"
-        self.crear_factura_pdf(nombre_archivo, datos_factura)
+
+        # Crear la factura en PDF con el workeruwu
+        self.manager.ejecutar_worker(
+            func=lambda: crear_factura(datos_factura), 
+            op_type=f"creando factura",
+            resultado_callback= self.factura_guardada_exitosamente,
+            error_callback=lambda: show_message(self, "crear_factura", "error", "warning")
+        )
+        print("Productos:", productos)
+        self.crear_factura_pdf(f"factura_{factura_id}.pdf", datos_factura)
+
+        # Mensaje de confirmación
+        QMessageBox.information(self, "Factura Generada", "La factura ha sido generada con éxito.")
+
+    def calcular_total_cesta(self):
+        """Calcula el total de los productos en la cesta."""
+        total = 0.0
+        for row in range(self.ui.cobro_search_table.rowCount()):
+            subtotal = float(self.ui.cobro_search_table.item(row, 3).text().strip('$'))
+            total += subtotal
+        return total
+    
+    def obtener_datos_cesta(self):
+        """Obtiene los datos de los productos en la cesta."""
+        productos = []
+        for row in range(self.ui.cobro_search_table.rowCount()):
+            codigo_barras = self.ui.cobro_search_table.item(row, 0).text()  # Si tienes este dato
+            nombre = self.ui.cobro_search_table.item(row, 1).text()
+            cantidad = int(self.ui.cobro_search_table.item(row, 2).text())
+            precio = float(self.ui.cobro_search_table.item(row, 3).text().strip('$'))
+            subtotal = cantidad * precio
+            productos.append({
+                "codigo_barras": codigo_barras,
+                "nombre": nombre,
+                "cantidad": cantidad,
+                "precio": precio,
+                "subtotal": subtotal
+            })
+        return productos
+
+        # self.crear_factura_pdf(nombre_archivo, datos_factura)
 
         # Llamar a la función para imprimir
         # self.imprimir_factura(nombre_archivo)
@@ -316,6 +388,14 @@ class ManagerWindow(QWidget):
         # Encabezado
         c.setFont("Helvetica-Bold", 16)
         c.drawCentredString(width / 2.0, height - 50, "SUPERMARKET")
+
+        # Datos del cliente
+        c.setFont("Helvetica", 12)
+        cliente = datos_factura["cliente"]
+        c.drawString(30, height - 80, f"Nombre: {cliente['nombre']}")
+        c.drawString(30, height - 100, f"Email: {cliente['email']}")
+        c.drawString(30, height - 120, f"Teléfono: {cliente['telefono']}")
+
 
         c.setFont("Helvetica", 12)
         c.drawCentredString(width / 2.0, height - 70, datos_factura["direccion"])
@@ -350,10 +430,10 @@ class ManagerWindow(QWidget):
         c.drawString(30, y - 60, f"Cambio: ${datos_factura['cambio']:.2f}")
 
         # Código de barras
-        y -= 80
-        c.drawString(30, y, "codigo de barras:")
-        barcode = Code128(datos_factura["codigo_barras"], barHeight=40, barWidth=1.2)
-        barcode.drawOn(c, 30, y - 50)
+        #y -= 80
+        #c.drawString(30, y, "codigo de barras:")
+        #barcode = Code128(datos_factura["codigo_barras"], barHeight=40, barWidth=1.2)
+        #barcode.drawOn(c, 30, y - 50)
 
         # Mensaje final
         c.setFont("Helvetica-Bold", 12)
@@ -375,7 +455,132 @@ class ManagerWindow(QWidget):
             elif os.name == "nt":  # güinDOS
                 os.startfile(archivo_pdf, "print")
         except Exception as e:
-            print(f"Error al imprimir: {e}")
+            print(f"Error al imprimir: {e}")
+
+    def agregar_a_cesta(self, codigo, nombre, cantidad, precio):
+        """
+        Añade un producto a la cesta y actualiza la tabla y el total.
+        """
+        cantidad_text = cantidad.strip()
+
+        if not cantidad_text.isdigit():
+            QMessageBox.warning(self, "Error", "Por favor, introduce una cantidad válida.")
+            return
+
+        cantidad = int(cantidad_text)
+        if cantidad <= 0:
+            QMessageBox.warning(self, "Error", "La cantidad debe ser mayor a 0.")
+            return
+
+        # Calcular subtotal!
+        subtotal = precio * cantidad
+
+        # Agregar a la tabla de la cesta, me duele todo ayuda
+        row_position = self.ui.cobro_search_table.rowCount()
+        self.ui.cobro_search_table.insertRow(row_position)
+        self.ui.cobro_search_table.setItem(row_position, 0, QTableWidgetItem(codigo))
+        self.ui.cobro_search_table.setItem(row_position, 1, QTableWidgetItem(nombre))
+        self.ui.cobro_search_table.setItem(row_position, 2, QTableWidgetItem(str(cantidad)))
+        self.ui.cobro_search_table.setItem(row_position, 3, QTableWidgetItem(f"${precio:.2f}"))
+        self.ui.cobro_search_table.setItem(row_position, 4, QTableWidgetItem(f"${subtotal:.2f}"))
+
+        # Actualizar el total
+        total_actual = float(self.ui.total_label.text().split('$')[1])
+        total_actual += subtotal
+        self.ui.total_label.setText(f"Total: ${total_actual:.2f}")
+
+        # Limpiar campos
+        self.ui.codigo_barras_cobro_input.clear()
+        self.ui.nombre_cobro_input.clear()
+        #self.ui.cantidad_cobro_input.clear()
+        self.ui.codigo_barras_cobro_input.setFocus()  # Focalizar en el campo de código de barras para el siguiente producto
+
+    def seleccionar_producto_desde_tabla(self, row, column):
+        """
+        Obtiene los datos del producto seleccionado desde la tabla
+        y los pasa a la función de agregar a la cesta.
+        """
+        tabla = self.ui.productos_table
+
+        # Validar que la fila seleccionada está dentro del rango de filas válidas
+        if row >= tabla.rowCount() or row < 0:
+            print(f"Error: La fila {row} está fuera del rango válido.")
+            return
+
+        # Validar que la celda no sea None, importante!!!!!
+        item_codigo = tabla.item(row, 0)  # Columna Código
+        item_nombre = tabla.item(row, 1)  # Columna Nombre
+        item_cantidad = tabla.item(row, 2)  # Columna Cantidad
+        item_precio = tabla.item(row, 3)  # Columna Precio
+
+        if not (item_codigo and item_nombre and item_precio):
+            print(f"Error: Una o más celdas están vacías en la fila {row}.")
+            return
+
+        try:
+            # Extraer valores de las celdas
+            codigo = item_codigo.text()
+            nombre = item_nombre.text()
+            cantidad = item_cantidad.text()
+            precio = float(item_precio.text().strip('$'))  # Convertir precio a float
+        except Exception as e:
+            print(f"Error al procesar los datos de la fila {row}: {e}")
+            return
+
+        # Llamar a la función para agregar a la cesta
+        self.agregar_a_cesta(codigo, nombre, cantidad, precio)
+
+    def factura_guardada_exitosamente(self, resultado):
+        """Callback que se ejecuta cuando la factura se guarda correctamente."""
+        if resultado:
+            print(self, "Éxito", "La factura se guardó en la base de datos exitosamente.")
+        else:
+            QMessageBox.warning(self, "Error", "Ocurrió un problema al guardar la factura en la base de datos.")
+
+
+
+    def cargar_historial(self):
+        """
+        Carga los datos de la base de datos en la tabla de historial usando un worker.
+        """
+        self.ui.historial_table.setRowCount(0) 
+        self.ui.status_label.setText("Cargando historial...")
+
+        self.manager.ejecutar_worker(
+            func=obtener_facturas,  
+            op_type="cargar_historial", 
+            resultado_callback=self._rellenar_tabla_historial,
+            error_callback=self.ui.mostrar_error 
+        )
+
+    def _rellenar_tabla_historial(self, facturas):
+        """
+        Rellena la tabla de historial con los datos obtenidos del worker.
+        """
+        if not facturas:
+            self.ui.status_label.setText("No hay facturas disponibles en el historial.")
+            return
+
+        for factura in facturas:
+            row_position = self.ui.historial_table.rowCount()
+            self.ui.historial_table.insertRow(row_position)
+            if isinstance(factura["cliente"], dict):
+                cliente_nombre = factura["cliente"].get("nombre", "Cliente Desconocido")
+            else:
+                print(f"Error: Cliente no es un diccionario. Es de tipo {type(factura['cliente'])}: {factura['cliente']}")
+                cliente_nombre = "Dato Inválido"
+
+            # Rellenar columnas como pavo en navidad
+            self.ui.historial_table.setItem(row_position, 0, QTableWidgetItem(str(factura["factura_id"])))
+            self.ui.historial_table.setItem(row_position, 1, QTableWidgetItem(factura["fecha"]))
+            self.ui.historial_table.setItem(row_position, 2, QTableWidgetItem(cliente_nombre))
+            self.ui.historial_table.setItem(row_position, 3, QTableWidgetItem(f"${factura['subtotal']:.2f}"))
+            self.ui.historial_table.setItem(row_position, 4, QTableWidgetItem(f"${factura['efectivo']:.2f}"))
+            self.ui.historial_table.setItem(row_position, 5, QTableWidgetItem(f"${factura['cambio']:.2f}"))
+
+        self.ui.status_label.setText(f"Se cargaron {len(facturas)} facturas en el historial.")
+
+
 
 
 def cargar_settings(ruta="settings.json"):
@@ -389,3 +594,5 @@ def cargar_settings(ruta="settings.json"):
     else:
         print(f"No se encontró el archivo {ruta}")
         return {}
+    
+

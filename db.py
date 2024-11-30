@@ -88,3 +88,46 @@ def buscar_productos_por_nombre(nombre):
     except Exception as e:
         print(f"Error al buscar por nombre: {e}")
         return []
+    
+def crear_factura(datos_factura):
+    """
+    Crea una nueva factura en la colección 'facturas'.
+
+    :param datos_factura: Diccionario que contiene los datos de la factura.
+    :return: True si la factura se creó exitosamente, False en caso contrario.
+    """
+    db = obtener_conexion()
+    if db is None:
+        return False
+
+    try:
+        db['facturas'].insert_one(datos_factura)  # Inserta la factura en la colección 'facturas'
+        return True
+    except Exception as e:
+        print(f"Error al crear la factura: {e}")
+        return False
+
+
+def obtener_facturas():
+    """
+    Obtiene todas las facturas desde la colección en la base de datos.
+    Devuelve una lista de diccionarios con los campos necesarios para la tabla de historial.
+    """
+    db = obtener_conexion()
+    if db is None:
+        return []
+
+    facturas = db['facturas'].find()
+    historial = []
+
+    for factura in facturas:
+        historial.append({
+            "factura_id": factura.get("factura_id", "N/A"),
+            "fecha": factura.get("fecha", "Fecha desconocida"),
+            "cliente": factura["cliente"],
+            "subtotal": factura.get("subtotal", 0.0),
+            "efectivo": factura.get("efectivo", 0.0),
+            "cambio": factura.get("cambio", 0.0),
+        })
+
+    return historial

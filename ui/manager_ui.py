@@ -1,4 +1,4 @@
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QToolButton, QLabel, QPushButton, QLineEdit, QListWidget, QWidget, QTabWidget, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QToolButton, QLabel, QPushButton, QLineEdit, QListWidget, QWidget, QTabWidget, QHeaderView, QTableWidget, QTableWidgetItem
 from PyQt5.QtGui import QFont, QPixmap, QImage, QPainterPath, QPainter, QIcon, QIntValidator
 from PyQt5.QtCore import Qt, QRectF, QSize
 
@@ -13,7 +13,7 @@ class ManagerUI:
             "Gestión de Productos": self.setup_producto_tab,
             "Configuración": self.setup_configuration,
             "Cobro": self.setup_cobro_tab,
-            "Historial": lambda tab: self.generic_tab(tab, "Contenido del Historial"),
+            "Historial":self.setup_historial_tab,
         }
 
     def setup_tabs(self, tab_widget):
@@ -76,6 +76,43 @@ class ManagerUI:
 
 ### TABS
 
+    def setup_historial_tab(self, tab):
+        """
+        Configura la pestaña del historial de facturas.
+        """
+        layout = QVBoxLayout(tab)
+
+        # Título
+        titulo = QLabel("Historial de Facturas")
+        titulo.setFont(QFont("Arial", 18, QFont.Bold))
+        titulo.setAlignment(Qt.AlignCenter)
+        layout.addWidget(titulo)
+
+        # Tabla para mostrar las facturas
+        self.historial_table = QTableWidget()
+        self.historial_table.setColumnCount(6)  # Ajustar según los datos de la factura
+        self.historial_table.setHorizontalHeaderLabels([
+            "ID Factura", "Fecha", "Cliente", "Total", "Efectivo", "Cambio"
+        ])
+        self.historial_table.horizontalHeader().setStretchLastSection(True)
+        self.historial_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.historial_table.setAlternatingRowColors(True)
+        layout.addWidget(self.historial_table)
+
+        # Botónn dee recarga de historial!!!11!!1!
+        self.reload_button = QPushButton("Actualizar Historial")
+        self.reload_button.setFont(QFont("Arial", 12))
+        layout.addWidget(self.reload_button)
+
+        # Mensaje de estado, u know
+        self.status_label = QLabel("")
+        self.status_label.setFont(QFont("Arial", 10))
+        self.status_label.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.status_label)
+
+        tab.setLayout(layout)
+
+
     def setup_cobro_tab(self, tab):
         """
         Configura la pestaña de cobro de productos.
@@ -85,46 +122,80 @@ class ManagerUI:
         # Título de la pestaña
         titulo = QLabel("Cobro de Productos")
         titulo.setFont(QFont("Arial", 18, QFont.Bold))
+        titulo.setAlignment(Qt.AlignCenter)
         layout.addWidget(titulo)
 
-        # Formulario para agregar productos a la cesta
+        # Formulario de búsqueda
         form_layout = QHBoxLayout()
 
+        # Entrada de código de barras
         self.codigo_barras_cobro_input = QLineEdit()
         self.codigo_barras_cobro_input.setValidator(QIntValidator())
         self.codigo_barras_cobro_input.setPlaceholderText("Código de Barras")
         form_layout.addWidget(self.codigo_barras_cobro_input)
 
+        # Entrada del nombre del producto
         self.nombre_cobro_input = QLineEdit()
-        self.nombre_cobro_input.setPlaceholderText("nombre")
+        self.nombre_cobro_input.setPlaceholderText("Nombre del Producto")
         form_layout.addWidget(self.nombre_cobro_input)
 
-        self.agregar_cesta_button = QPushButton("Agregar a la Cesta")
-        #self.agregar_cesta_button.clicked.connect(self.agregar_a_cesta)
-        form_layout.addWidget(self.agregar_cesta_button)
+        # Botón de búsqueda
+        self.buscar_producto_button = QPushButton("Buscar Producto")
+        form_layout.addWidget(self.buscar_producto_button)
 
         layout.addLayout(form_layout)
 
-        # Tabla para mostrar los productos en la cesta
+        # Tabla de productos disponibles
+        productos_layout = QVBoxLayout()
+        productos_label = QLabel("Productos Disponibles")
+        productos_label.setFont(QFont("Arial", 14, QFont.Bold))
+        productos_layout.addWidget(productos_label)
+
+        self.productos_table = QTableWidget()
+        self.productos_table.setColumnCount(4)
+        self.productos_table.setHorizontalHeaderLabels(["Código", "Nombre", "Cantidad", "Precio Unitario"])
+        self.productos_table.horizontalHeader().setStretchLastSection(True)
+        self.productos_table.setEditTriggers(QTableWidget.NoEditTriggers)  # Solo lectura
+        productos_layout.addWidget(self.productos_table)
+
+        layout.addLayout(productos_layout)
+
+        # Botón para agregar producto seleccionado a la cesta
+        self.agregar_a_cesta_button = QPushButton("Agregar Producto Seleccionado a la Cesta")
+        layout.addWidget(self.agregar_a_cesta_button)
+
+        # Tabla de productos en la cesta
+        cesta_layout = QVBoxLayout()
+        cesta_label = QLabel("Cesta de Productos")
+        cesta_label.setFont(QFont("Arial", 14, QFont.Bold))
+        cesta_layout.addWidget(cesta_label)
+
         self.cobro_search_table = QTableWidget()
         self.cobro_search_table.setColumnCount(4)
-        self.cobro_search_table.setHorizontalHeaderLabels(["Código", "Nombre", "Cantidad", "Precio"])
+        self.cobro_search_table.setHorizontalHeaderLabels(["Código", "Nombre", "Cantidad", "Precio Unitario"])
+        self.cobro_search_table.horizontalHeader().setStretchLastSection(True)
         self.cobro_search_table.setEditTriggers(QTableWidget.NoEditTriggers)  # Solo lectura
-        layout.addWidget(self.cobro_search_table)
+        cesta_layout.addWidget(self.cobro_search_table)
+
+        layout.addLayout(cesta_layout)
 
         # Total y opciones de pago
         total_layout = QHBoxLayout()
+        
+        # Etiqueta del total
         self.total_label = QLabel("Total: $0.00")
         self.total_label.setFont(QFont("Arial", 16, QFont.Bold))
         total_layout.addWidget(self.total_label)
         total_layout.addStretch()
 
+        # Botón para procesar el pago (wip)
         self.pagar_button = QPushButton("Pagar")
-        #self.pagar_button.clicked.connect(self.procesar_pago)
         total_layout.addWidget(self.pagar_button)
 
         layout.addLayout(total_layout)
         tab.setLayout(layout)
+
+
 
     def setup_home_tab(self, tab):
         """
@@ -241,6 +312,12 @@ class ManagerUI:
         self.setup_cobro_tab(self.cobro_tab)
         self.tab_widget.addTab(self.cobro_tab, "Cobro")
 
+
+        self.historial_tab = QWidget()
+        self.setup_historial_tab(self.historial_tab)
+        self.tab_widget.addTab(self.historial_tab, "Historial")
+
+
     
     def setup_configuration(self, tab):
         """
@@ -292,7 +369,7 @@ class ManagerUI:
         """
         Muestra un error en la lista de resultados.
         """
-        self.resultados_list.addItem(f"Error: {error}")
+        print(error)
 
     def mostrar_resultados(self, resultados):
         self.resultados_table.setRowCount(0)

@@ -28,6 +28,7 @@ class Theme:
             json.dump(settings, f, indent=4)
 
         # Aplicar el tema al widget
+
         self.widget.style().unpolish(self.widget)
         file = QFile(self.widget.theme[theme_key])
         if not file.open(QFile.ReadOnly | QFile.Text):
@@ -38,12 +39,16 @@ class Theme:
         self.widget.update()
 
 
+ # mejoré esto, solo muestra un mensaje en la pantalla!
+def show_message(self, title, message, msg_type="info"):
+    """Popup para mostrar mensajes"""
+    if msg_type == "info":
+        QMessageBox.information(self, title, message)
+    elif msg_type == "warning":
+        QMessageBox.warning(self, title, message)
+    elif msg_type == "error":
+        QMessageBox.critical(self, title, message)
 
-# shows message in the screne with a ok button
-def showMessage(widget, title, message):
-    """method to show any message to the user with a title and description"""
-    msg = QMessageBox()
-    msg.about(widget, title, message)
 
 
 # shows message with a QLineEdit to enter a text
